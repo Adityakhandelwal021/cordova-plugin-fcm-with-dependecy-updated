@@ -153,6 +153,44 @@ public class FCMPlugin extends CordovaPlugin {
         return true;
     }
 
+
+    private void askNotificationPermission() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            if (ContextCompat.checkSelfPermission(getContext(), android.Manifest.permission.POST_NOTIFICATIONS) ==
+                PackageManager.PERMISSION_GRANTED) {
+                Log.d(TAG, "Notification permission already granted");
+            } else {
+                ActivityCompat.requestPermissions(cordova.getActivity(), 
+                    new String[]{android.Manifest.permission.POST_NOTIFICATIONS}, 
+                    1);
+            }
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) throws JSONException {
+        if (requestCode == 1) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                Toast.makeText(getContext(), "Notifications permission granted", Toast.LENGTH_SHORT).show();
+            } else {
+                Snackbar.make(
+                    cordova.getActivity().findViewById(android.R.id.content),
+                    String.format(getString(R.string.txt_error_post_notification), getString(R.string.app_name)),
+                    Snackbar.LENGTH_INDEFINITE
+                ).setAction(getString(R.string.goto_settings), new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        Intent settingsIntent = new Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS)
+                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
+                            .putExtra(Settings.EXTRA_APP_PACKAGE, getContext().getPackageName());
+                        getContext().startActivity(settingsIntent);
+                    }
+                }).show();
+            }
+        }
+    }
+
+
     public void getInitialPushPayload(CallbackContext callback) {
         if(initialPushPayload == null) {
             Log.d(TAG, "getInitialPushPayload: null");
