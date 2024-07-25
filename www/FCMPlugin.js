@@ -114,6 +114,7 @@ FCMPlugin.prototype.requestPushPermission = function (success, error, options) {
 };
 
 
+
 // REQUEST THE CREATION OF A NOTIFICATION CHANNEL //
 FCMPlugin.prototype.createNotificationChannelAndroid = function (channelConfig, success, error) {
   if (cordova.platformId === "android") {
