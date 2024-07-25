@@ -55,26 +55,64 @@ FCMPlugin.prototype.clearAllNotifications = function (success, error) {
 };
 
 // REQUEST IOS PUSH PERMISSION //
-FCMPlugin.prototype.requestPushPermissionIOS = function (success, error, options) {
-  if (cordova.platformId !== "ios") {
+FCMPlugin.prototype.requestPushPermission = function (success, error, options) {
+  // For iOS
+  if (cordova.platformId === "ios") {
+    var ios9SupportTimeout = 10;
+    var ios9SupportInterval = 0.3;
+    if (options && options.ios9Support && options.ios9Support.timeout) {
+      ios9SupportTimeout = options.ios9Support.timeout;
+    }
+    if (options && options.ios9Support && options.ios9Support.interval) {
+      ios9SupportInterval = options.ios9Support.interval;
+    }
+    exec(success, error, "FCMPlugin", "requestPushPermission", [
+      ios9SupportTimeout,
+      ios9SupportInterval
+    ]);
+  } else if (cordova.platformId === "android") {
+    // For Android 13+
+    if (parseInt(device.version) >= 33) {
+      var permissions = cordova.plugins.permissions;
+      permissions.hasPermission(permissions.POST_NOTIFICATIONS, function (status) {
+        if (status.hasPermission) {
+          if (typeof success !== "undefined") {
+            success(true);
+          }
+        } else {
+          permissions.requestPermission(permissions.POST_NOTIFICATIONS, function (status) {
+            if (status.hasPermission) {
+              if (typeof success !== "undefined") {
+                success(true);
+              }
+            } else {
+              if (typeof error !== "undefined") {
+                error('Permission denied');
+              }
+            }
+          }, function (err) {
+            if (typeof error !== "undefined") {
+              error('Permission request failed: ' + err);
+            }
+          });
+        }
+      }, function (err) {
+        if (typeof error !== "undefined") {
+          error('Permission check failed: ' + err);
+        }
+      });
+    } else {
+      if (typeof success !== "undefined") {
+        success(true);
+      }
+    }
+  } else {
     if (typeof success !== "undefined") {
       success(true);
     }
-    return;
   }
-  var ios9SupportTimeout = 10;
-  var ios9SupportInterval = 0.3;
-  if (options && options.ios9Support && options.ios9Support.timeout) {
-    ios9SupportTimeout = options.ios9Support.timeout;
-  }
-  if (options && options.ios9Support && options.ios9Support.interval) {
-    ios9SupportInterval = options.ios9Support.interval;
-  }
-  exec(success, error, "FCMPlugin", "requestPushPermission", [
-    ios9SupportTimeout,
-    ios9SupportInterval
-  ]);
 };
+
 
 // REQUEST THE CREATION OF A NOTIFICATION CHANNEL //
 FCMPlugin.prototype.createNotificationChannelAndroid = function (channelConfig, success, error) {
