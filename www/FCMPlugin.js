@@ -55,7 +55,7 @@ FCMPlugin.prototype.clearAllNotifications = function (success, error) {
 };
 
 // REQUEST IOS PUSH PERMISSION //
-FCMPlugin.prototype.requestPushPermission = function (success, error, options) {
+FCMPlugin.prototype.requestPushPermissionIOS = function (success, error, options) {
   // For iOS
   if (cordova.platformId === "ios") {
     var ios9SupportTimeout = 10;
