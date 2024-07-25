@@ -17,7 +17,6 @@
 @implementation AppDelegate (MCPlugin)
 
 static NSData *lastPush;
-static NSData *initialPushPayload;
 static NSString *fcmToken;
 static NSString *apnsToken;
 NSString *const kGCMMessageIDKey = @"gcm.message_id";
@@ -125,14 +124,12 @@ fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
             [userInfoMutable setValue:@(NO) forKey:@"wasTapped"];
             NSLog(@"app active");
             lastPush = [NSJSONSerialization dataWithJSONObject:userInfoMutable options:0 error:&error];
-            [AppDelegate setInitialPushPayload:lastPush];
         } else if(application.applicationState == UIApplicationStateInactive) {
             NSError *error;
             NSDictionary *userInfoMutable = [userInfo mutableCopy];
             [userInfoMutable setValue:@(YES) forKey:@"wasTapped"];
             NSLog(@"app opened by user tap");
             lastPush = [NSJSONSerialization dataWithJSONObject:userInfoMutable options:0 error:&error];
-            [AppDelegate setInitialPushPayload:lastPush];
         }
 
         completionHandler(UIBackgroundFetchResultNoData);
@@ -143,13 +140,8 @@ fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
 }
 // [END message_handling]
 
-- (void)messaging:(nonnull FIRMessaging *)messaging didReceiveRegistrationToken:(NSString *)deviceToken {
+- (void)messaging:(nonnull FIRMessaging *)messaging didReceiveRegistrationToken:(nonnull NSString *)deviceToken {
     NSLog(@"Device FCM Token: %@", deviceToken);
-    if(deviceToken == nil) {
-        fcmToken = nil;
-        [FCMPlugin.fcmPlugin notifyFCMTokenRefresh:nil];
-        return;
-    }
     // Notify about received token.
     NSDictionary *dataDict = [NSDictionary dictionaryWithObject:deviceToken forKey:@"token"];
     [[NSNotificationCenter defaultCenter] postNotificationName:@"FCMToken" object:nil userInfo:dataDict];
@@ -187,20 +179,10 @@ fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
     lastPush = push;
 }
 
-+ (void)setInitialPushPayload:(NSData*)payload {
-    if(initialPushPayload == nil) {
-        initialPushPayload = payload;
-    }
-}
-
 + (NSData*)getLastPush {
     NSData* returnValue = lastPush;
     lastPush = nil;
     return returnValue;
-}
-
-+ (NSData*)getInitialPushPayload {
-    return initialPushPayload;
 }
 
 + (NSString*)getFCMToken {
@@ -209,10 +191,6 @@ fetchCompletionHandler:(void (^)(UIBackgroundFetchResult))completionHandler {
 
 + (NSString*)getAPNSToken {
     return apnsToken;
-}
-
-+ (void)deleteInstanceId:(void (^)(NSError *error))handler {
-    [[FIRInstanceID instanceID] deleteIDWithHandler:handler];
 }
 
 + (void)hasPushPermission:(void (^)(NSNumber* yesNoOrNil))block {
